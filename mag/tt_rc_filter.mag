@@ -1,0 +1,9 @@
+magic
+tech minimum
+timestamp 1740541236
+<< labels >>
+flabel space 1 5 3 221 6 FreeSans 2 0 0 0 VDPWR
+port 1 nsew power bidirectional
+flabel space 4 5 6 221 7 FreeSans 2 0 0 0 VGND
+port 2 nsew ground bidirectional
+<< end >>
