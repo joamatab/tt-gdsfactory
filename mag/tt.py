@@ -1,6 +1,10 @@
 import os
 import re
 import gdsfactory as gf
+import pathlib
+
+module = pathlib.Path(__file__).parent.absolute()
+repo = module.parent
 
 # Parameters (adjust as needed)
 TOP_LEVEL_CELL = "tt_um_rc_filter"
@@ -53,7 +57,7 @@ def draw_power_stripe(component, name, x):
         width=POWER_STRIPE_WIDTH,
         orientation=0,  # 0° orientation (east); adjust if needed
         layer=LAYER_MET4,
-        )
+    )
 
 
 # Draw each power stripe defined in POWER_STRIPES
@@ -72,16 +76,17 @@ def def_orientation_to_angle(orient):
     mapping = {"N": 90, "S": 270, "E": 0, "W": 180}
     return mapping.get(orient, 0)
 
+
 def read_def_ports(def_file_path):
     """Read a DEF file and extract port definitions for met4.
-    
+
     Each port in the DEF file has a block like:
-    
+
         - <name> + NET <net> + DIRECTION <direction> + USE <use>
           + PORT
             + LAYER met4 ( <x1> <y1> ) ( <x2> <y2> )
             + PLACED ( <px> <py> ) <orient> ;
-    
+
     Returns a list of port dictionaries.
     """
     with open(def_file_path, "r") as f:
@@ -92,9 +97,9 @@ def read_def_ports(def_file_path):
         r"-\s+(?P<name>\S+)\s+\+ NET\s+(?P<net>\S+)\s+\+ DIRECTION\s+(?P<direction>\S+)\s+\+ USE\s+(?P<use>\S+).*?"
         r"\+ LAYER\s+met4\s+\(\s*(?P<x1>[-\d]+)\s+(?P<y1>[-\d]+)\s*\)\s+\(\s*(?P<x2>[-\d]+)\s+(?P<y2>[-\d]+)\s*\).*?"
         r"\+ PLACED\s+\(\s*(?P<px>[-\d]+)\s+(?P<py>[-\d]+)\s*\)\s+(?P<orient>\S+)\s*;",
-        re.DOTALL
+        re.DOTALL,
     )
-    
+
     ports = []
     for match in pattern.finditer(def_data):
         name = match.group("name")
@@ -110,25 +115,28 @@ def read_def_ports(def_file_path):
         px = float(match.group("px"))
         py = float(match.group("py"))
         orient = match.group("orient")
-        
+
         # The DEF port box is defined from (x1, y1) to (x2, y2). Its width is:
         width = abs(x2 - x1)
         # And its height is:
         height = abs(y2 - y1)
         # Convert DEF orientation (e.g., 'N') to an angle (gdsfactory uses degrees)
         angle = def_orientation_to_angle(orient)
-        
-        ports.append({
-            "name": name,
-            "net": net,
-            "direction": direction,
-            "use": use,
-            "center": (px, py),
-            "width": width,
-            "height": height,
-            "orientation": angle
-        })
+
+        ports.append(
+            {
+                "name": name,
+                "net": net,
+                "direction": direction,
+                "use": use,
+                "center": (px, py),
+                "width": width,
+                "height": height,
+                "orientation": angle,
+            }
+        )
     return ports
+
 
 # For this example, we map DEF’s met4 layer to gdsfactory layer (65,20).
 LAYER_MET4 = (65, 20)
@@ -142,7 +150,7 @@ for p in ports:
     # Create a port. In gdsfactory, the "width" is defined perpendicular to the port orientation.
     # Here we simply use the extracted width; you may wish to adjust if needed.
     port_center = p["center"]
-    center = (port_center[0]*1e-3, port_center[1]*1e-3)
+    center = (port_center[0] * 1e-3, port_center[1] * 1e-3)
     width = p["width"] * 1e-3
     height = p["height"] * 1e-3
     c.add_port(
@@ -151,7 +159,7 @@ for p in ports:
         width=width,
         orientation=p["orientation"],
         layer=LAYER_MET4,
-        port_type="electrical"
+        port_type="electrical",
     )
     # Optionally, add a polygon to visualize the port.
     cx, cy = center
@@ -161,16 +169,13 @@ for p in ports:
         (cx - dx, cy - dy),
         (cx + dx, cy - dy),
         (cx + dx, cy + dy),
-        (cx - dx, cy + dy)
+        (cx - dx, cy + dy),
     ]
     c.add_polygon(poly_points, layer=LAYER_MET4)
 
 
 # Export the layout as GDS
-gds_filename = f"gds/{TOP_LEVEL_CELL}.gds"
+gds_filename = repo / "gds" / f"{TOP_LEVEL_CELL}.gds"
 c.show()
 c.write_gds(gds_filename)
 print(f"GDS saved to {gds_filename}")
-
-
-
