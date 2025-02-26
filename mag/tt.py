@@ -3,7 +3,7 @@ import re
 import gdsfactory as gf
 
 # Parameters (adjust as needed)
-TOP_LEVEL_CELL = "tt_rc_filter"
+TOP_LEVEL_CELL = "tt_um_rc_filter"
 POWER_STRIPE_WIDTH = 2.0  # in microns
 # Power stripe definitions: net name and x position in microns
 POWER_STRIPES = {
